@@ -38,11 +38,19 @@ def _parse_db_connection_txt(contents: str) -> str:
 def get_db_config() -> DbConfig:
     """Resolve database DSN from db_connection.txt (preferred) or environment variables."""
     # Prefer a connection file if present (local dev + container contract).
-    # Search in current working directory and parent directories (repo/container root scenarios).
+    #
+    # In this multi-container repo, notes_database/startup.sh writes db_connection.txt
+    # into the notes_database container root, so we search a few likely locations.
     candidates = [
+        # 1) Current working directory (if PreviewManager copies db_connection.txt here)
         Path(os.getcwd()) / "db_connection.txt",
+        # 2) notes_backend container root (repo/container root scenarios)
         Path(__file__).resolve().parents[3] / "db_connection.txt",  # .../notes_backend/db_connection.txt
-        Path(__file__).resolve().parents[4] / "db_connection.txt",  # workspace root (defensive)
+        # 3) workspace root (defensive)
+        Path(__file__).resolve().parents[4] / "db_connection.txt",
+        # 4) sibling notes_database container root (common in this project layout)
+        Path(__file__).resolve().parents[4] / "notemaster-229916-229931" / "notes_database" / "db_connection.txt",
+        Path(__file__).resolve().parents[4] / "notes_database" / "db_connection.txt",
     ]
 
     for p in candidates:

@@ -1,6 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
+import os
+
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.models import (
@@ -31,9 +33,21 @@ app = FastAPI(
     openapi_tags=openapi_tags,
 )
 
+# CORS wiring:
+# - In preview, the frontend runs on a different origin than the backend.
+# - Set CORS_ALLOW_ORIGINS to a comma-separated list of allowed origins, e.g.:
+#     CORS_ALLOW_ORIGINS="http://localhost:3000,https://<preview-frontend-host>"
+# - If unset, we keep permissive "*" to avoid integration friction in smoke checks.
+cors_allow_origins_env = os.getenv("CORS_ALLOW_ORIGINS", "").strip()
+allow_origins = (
+    [o.strip() for o in cors_allow_origins_env.split(",") if o.strip()]
+    if cors_allow_origins_env
+    else ["*"]
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
